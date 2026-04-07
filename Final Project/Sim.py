@@ -7,15 +7,21 @@ class Simulation:
 
     def __init__(self, title):
         self.paused = True
+        self.complete = False
         self.title = title
         self.cur_time = 0
-        self.dt = 0.3
-        self.system = ms.Muscle()
+        self.dt = 0.001
+        self.system = ms.Elbow()
 
     def update(self):
         if not self.paused:
-            self.system.rk4_step(self.dt)
-            self.cur_time += self.dt
+            if not self.complete:
+                self.system.rk4_step(self.dt)
+                self.cur_time += self.dt
+
+            if self.system.theta > 1.55:
+                print("One full contraction complete")
+                self.complete = True
 
 #Sets up Pygame Window
 pygame.init()
@@ -53,7 +59,9 @@ while running:
                 sim.paused = True
             if event.key == pygame.K_SPACE and sim.paused: #Increments the program by 1 step.
                 print("Sim Incremented")
+                sim.paused=False
                 sim.update()
+                sim.paused=True
 
     # update + draw
     sim.update()

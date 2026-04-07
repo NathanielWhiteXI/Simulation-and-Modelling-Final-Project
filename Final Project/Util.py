@@ -14,20 +14,19 @@ def draw_axes(window):
 
 # Draws each mass on the screen.
 def draw(system, screen):
-    # Convert simulation coordinates to screen coordinates
     def to_screen(v):
         return (400 + int(v[0]), 300 + int(v[1]))
 
     # --- Joint + Arm Geometry ---
-    elbow_pos = pygame.Vector2(0, 0)        # elbow at origin of sim space
+    elbow_pos = pygame.Vector2(0, 0)
     elbow_screen = to_screen(elbow_pos)
 
     # Upper arm (fixed)
     shoulder_pos = pygame.Vector2(0, -80)
     pygame.draw.line(screen, WHITE, to_screen(shoulder_pos), elbow_screen, 6)
 
-    # Forearm endpoint based on theta
-    L = system.length * 200   # scale to pixels
+    # Forearm endpoint
+    L = system.length * 200
     forearm_end = pygame.Vector2(
         L * math.cos(system.theta),
         L * math.sin(system.theta)
@@ -37,13 +36,30 @@ def draw(system, screen):
     # Draw forearm
     pygame.draw.line(screen, GREEN, elbow_screen, forearm_screen, 8)
 
-    # Draw elbow joint
+    # Draw elbow + hand
     pygame.draw.circle(screen, RED, elbow_screen, 10)
-
-    # Draw hand
     pygame.draw.circle(screen, GREEN, forearm_screen, 12)
 
-    # Optional: draw muscle line (biceps)
-    muscle_attach_shoulder = to_screen(pygame.Vector2(0, -80))
-    muscle_attach_forearm = to_screen(forearm_end * 0.3)  # attach near elbow
-    pygame.draw.line(screen, RED, muscle_attach_shoulder, muscle_attach_forearm, 3)
+    # ---------------------------------------------------------
+    # MUSCLE VISUALIZATION
+    # ---------------------------------------------------------
+
+    # Biceps (flexor)
+    biceps_origin = pygame.Vector2(0, -80)          # shoulder
+    biceps_insert = forearm_end * 0.30              # near elbow
+    pygame.draw.line(
+        screen, RED,
+        to_screen(biceps_origin),
+        to_screen(biceps_insert),
+        4
+    )
+
+    # Triceps (extensor)
+    triceps_origin = pygame.Vector2(0, -80) + pygame.Vector2(-20, 0)
+    triceps_insert = forearm_end * 0.15             # slightly different insertion
+    pygame.draw.line(
+        screen, (0, 150, 255),                      # blue-ish color
+        to_screen(triceps_origin),
+        to_screen(triceps_insert),
+        4
+    )

@@ -5,81 +5,87 @@ import Util as util
 #Gravitational Constant.
 g = 9.81
 
-class Muscle:
-    def __init__(self):
-        #Elbow angle params
-        self.theta = math.radians(60)
-        self.omega = 0 #Angular Velocity
+class MuscleUnit:
+    def __init__(self, moment_arm, direction=1):
+        # +1 = flexor (biceps), -1 = extensor (triceps)
+        self.direction = direction
 
-        #Forearm params
-        self.length = 0.3
-        self.mass = 2.0
-        self.I = (1/3) * self.mass * self.length**2 #Moment of inertia
+        # Muscle parameters
+        self.L_rest = 0.25
+        self.k_passive = 150.0
+        self.c_damp = 2.0
+        self.F_max = 80.0
+        self.moment_arm = moment_arm
 
-        #Muscle Tendon params
-        self.L_rest = 0.25              # resting muscle length
-        self.k_passive = 150.0          # passive stiffness
-        self.c_damp = -8.0              # damping
-        self.F_max = 300.0              # max contractile force
-        self.moment_arm = 0.04          # meters
-
-        # Activation level (0–1)
+        # Activation (0–1)
         self.activation = 0.0
-    
+
     def muscle_length(self, theta):
-        # Simple geometric model: muscle shortens as elbow flexes
-        return self.L_rest - 0.03 * math.sin(theta)
+        # Flexor shortens with flexion; extensor shortens with extension
+        return self.L_rest - 0.03 * self.direction * math.sin(theta)
 
-    # Function to compute forces
-    def forces(self):
+    def force(self, theta, omega):
+        L = self.muscle_length(theta)
 
-        L = self.muscle_length(self.theta)
-
-        # Passive force (only when stretched)
+        # Passive force
         F_passive = 0.0
         if L > self.L_rest:
             F_passive = self.k_passive * (L - self.L_rest)
 
-        # Active force (scaled by activation)
+        # Active force
         F_active = self.activation * self.F_max
+
+        F_active *= max(0.0, 1.0 - 0.1 * abs(omega))
 
         # Total muscle force
         F_total = F_active + F_passive
 
-        # Convert to torque
-        tau_muscle = F_total * self.moment_arm
-
-        # Gravity torque on forearm
-        tau_gravity = self.mass * g * (self.length/2) * math.sin(self.theta)
+        # Convert to torque (direction determines sign)
+        tau = self.direction * F_total * self.moment_arm
 
         # Damping torque
-        tau_damp = self.c_damp * self.omega
+        tau += self.c_damp * omega
 
-        # Net torque
-        tau_net = tau_muscle - tau_gravity + tau_damp
+        return tau
+class Elbow:
+    def __init__(self):
+        # State
+        self.theta = math.radians(60)
+        self.omega = 0.0
 
-        return tau_net
+        # Forearm parameters
+        self.length = 0.3
+        self.mass = 100.0
+        self.I = (1/3) * self.mass * self.length**2
 
-    #RK4 Integrator for each step
+        # Muscles
+        self.biceps = MuscleUnit(moment_arm=0.04, direction=+1)
+        self.triceps = MuscleUnit(moment_arm=0.03, direction=-1)
+
+    def gravity_torque(self):
+        return self.mass * g * (self.length/2) * math.sin(self.theta)
+
+    def net_torque(self):
+        tau_bi = self.biceps.force(self.theta, self.omega)
+        tau_tri = self.triceps.force(self.theta, self.omega)
+        tau_grav = self.gravity_torque()
+
+        return tau_bi + tau_tri - tau_grav
+
     def rk4_step(self, dt):
-        '''
-        ODE Variables
-        Velocity in X, Y direction
-        Acceleration in the Spring Direction, and Gravity Acceleration
-        '''
         def f(state):
             theta, omega = state
             self.theta, self.omega = theta, omega
-        
-            tau = self.forces()
 
-            if self.theta < 0.05:
-                tau += 50 * (0.05 - self.theta)
-            if self.theta > 2.3:
-                tau -= 50 * (self.theta - 2.3)
+            tau = self.net_torque()
 
-            alpha = tau / self.I  # angular acceleration
+            # Joint limits
+            if theta < 0.05:
+                tau += 500 * (0.05 - theta)
+            if theta > 2.3:
+                tau -= 500 * (theta - 2.3)
 
+            alpha = tau / self.I
             return (omega, alpha)
 
         y = (self.theta, self.omega)

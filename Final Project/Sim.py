@@ -19,17 +19,17 @@ class Simulation:
                 self.system.rk4_step(self.dt)
                 self.cur_time += self.dt
 
-            if self.system.theta > 1.55:
-                print("One full contraction complete")
-                self.complete = True
+            # if self.system.theta > 1.55 and not self.complete:
+            #     print("One full contraction complete")
+            #     self.complete = True
 
 #Sets up Pygame Window
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("Mass-Spring RK4 Simulation")
+pygame.display.set_caption("2D Arm Simulation")
 clock = pygame.time.Clock()
 
-sim = Simulation("Mass-Spring RK4")
+sim = Simulation("2D Arm Simulation")
 
 #Message to user
 print("The red mass is connected to the origin via a spring")

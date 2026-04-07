@@ -73,6 +73,13 @@ class Elbow:
         return tau_bi + tau_tri - tau_grav
 
     def rk4_step(self, dt):
+        #Stops when a contraction is completed
+        if self.theta > 1.55:
+            self.omega = 0.1
+            self.theta = 1.54
+            print("Contraction Completed")
+            return
+
         def f(state):
             theta, omega = state
             self.theta, self.omega = theta, omega

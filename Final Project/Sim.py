@@ -1,5 +1,5 @@
 import pygame
-import Util as util
+import Util as utimil
 import Muscle as ms
 import math
 
@@ -19,9 +19,24 @@ class Simulation:
                 self.system.rk4_step(self.dt)
                 self.cur_time += self.dt
 
-            # if self.system.theta > 1.55 and not self.complete:
-            #     print("One full contraction complete")
-            #     self.complete = True
+            # visual-only gradual muscle change
+            grow_speed = 4.0   # how fast thickness changes
+
+            if self.system.omega < 0:
+                # concentric: biceps grows, triceps shrinks
+                target_biceps = 1.5
+                target_triceps = 0.025
+            elif self.system.omega > 0:
+                # eccentric: biceps shrinks, triceps grows
+                target_biceps = 0.025
+                target_triceps = 1.5
+            else:
+                # neutral
+                target_biceps = 0.5
+                target_triceps = 0.5
+
+            self.system.visual_biceps += (target_biceps - self.system.visual_biceps) * grow_speed * self.dt
+            self.system.visual_triceps += (target_triceps - self.system.visual_triceps) * grow_speed * self.dt
 
 #Sets up Pygame Window
 pygame.init()
@@ -32,8 +47,7 @@ clock = pygame.time.Clock()
 sim = Simulation("2D Arm Simulation")
 
 #Message to user
-print("The red mass is connected to the origin via a spring")
-print("The green mass is connected to the red Orb via a spring")
+print("Welcome to the 2D Arm Simulation!")
 print("Press R to start simulation")
 print("Press P to stop simulation")
 print("Press Space to see the next step")
@@ -42,8 +56,8 @@ print("Press Space to see the next step")
 running = True
 while running:
     clock.tick(30)
-    screen.fill(util.BLACK)
-    util.draw_axes(screen)
+    screen.fill(utimil.BLACK)
+    utimil.draw_axes(screen)
 
     # input
     for event in pygame.event.get():
@@ -63,9 +77,22 @@ while running:
                 sim.update()
                 sim.paused=True
 
+            # --- Muscle Controls ---
+            if event.key == pygame.K_1:
+                sim.system.biceps.activation = min(1.0, sim.system.biceps.activation + 0.1)
+
+            if event.key == pygame.K_2:
+                sim.system.biceps.activation = max(0.0, sim.system.biceps.activation - 0.1)
+
+            if event.key == pygame.K_3:
+                sim.system.triceps.activation = min(1.0, sim.system.triceps.activation + 0.1)
+
+            if event.key == pygame.K_4:
+                sim.system.triceps.activation = max(0.0, sim.system.triceps.activation - 0.1)
+
     # update + draw
     sim.update()
-    util.draw(sim.system, screen)
+    utimil.draw(sim.system, screen)
 
     pygame.display.update()
 

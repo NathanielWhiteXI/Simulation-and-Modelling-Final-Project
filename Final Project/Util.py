@@ -23,6 +23,7 @@ def draw(system, screen):
 
     # Upper arm (fixed)
     shoulder_pos = pygame.Vector2(0, -80)
+    shoulder_screen = to_screen(shoulder_pos)
     pygame.draw.line(screen, WHITE, to_screen(shoulder_pos), elbow_screen, 6)
 
     # Forearm endpoint
@@ -35,6 +36,46 @@ def draw(system, screen):
 
     # Draw forearm
     pygame.draw.line(screen, GREEN, elbow_screen, forearm_screen, 8)
+
+    # --- Thicker Arm Segments ---
+    
+    # Upper arm (thicker)
+    pygame.draw.line(screen, (160, 160, 175), shoulder_screen, elbow_screen, 14)
+
+    # Forearm (thicker)
+    pygame.draw.line(screen, (0, 200, 100), elbow_screen, forearm_screen, 12)
+
+    # --- Muscle Bands (Thickness = Activation) --- 
+
+    # Bicep attachment point
+    biceps_origin = shoulder_pos
+    biceps_insert = forearm_end * 0.30
+
+    # Tricep attachment point
+    triceps_origin = shoulder_pos + pygame.Vector2(-20, 0)
+    triceps_insert = forearm_end * 0.15
+
+    # convert to line thickness
+    biceps_width = 5 + int(system.visual_biceps * 9)
+    triceps_width = 5 + int(system.visual_triceps * 9)
+
+    # Draw biceps (red)
+    pygame.draw.line(
+        screen,
+        (255, 80, 80),
+        to_screen(biceps_origin),
+        to_screen(biceps_insert),
+        biceps_width
+    )
+
+    # Draw triceps (blue)
+    pygame.draw.line(
+        screen,
+        (80, 150, 255),
+        to_screen(triceps_origin),
+        to_screen(triceps_insert),
+        triceps_width
+    )
 
     # Draw elbow + hand
     pygame.draw.circle(screen, RED, elbow_screen, 10)

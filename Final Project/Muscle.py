@@ -16,9 +16,9 @@ class MuscleUnit:
         self.c_damp = 2.0
         self.F_max = 80.0
         self.moment_arm = moment_arm
-
+        
         # Activation (0–1)
-        self.activation = 0.0
+        self.activation = 0
 
     def muscle_length(self, theta):
         # Flexor shortens with flexion; extensor shortens with extension
@@ -61,6 +61,10 @@ class Elbow:
         # Muscles
         self.biceps = MuscleUnit(moment_arm=0.04, direction=+1)
         self.triceps = MuscleUnit(moment_arm=0.03, direction=-1)
+
+        # Visual-only muscle thickness 
+        self.visual_biceps = 0.5
+        self.visual_triceps = 0.5
 
     def gravity_torque(self):
         return self.mass * g * (self.length/2) * math.sin(self.theta)
